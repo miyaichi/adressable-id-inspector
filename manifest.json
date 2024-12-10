@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Adressable ID Inspector",
+  "version": "1.0",
+  "description": "Chrome extension designed to validate the implementation of addressable ID solutions such as Unified ID 2.0 (UID2) on websites.",
+  "permissions": ["tabs", "sidePanel", "storage", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

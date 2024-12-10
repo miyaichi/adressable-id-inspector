@@ -1,6 +1,6 @@
 # Adressable ID Inspector
 
-Adressable ID Inspector is a Chrome extension designed to validate the implementation of Unified ID 2.0 (UID2) and other addressable ID solutions like ID5 on websites. This tool is tailored for developers and media professionals working with Addressable Media, helping ensure proper integration and functionality of ID solutions.
+Adressable ID Inspector is a Chrome extension designed to validate the implementation of addressable ID solutions such as Unified ID 2.0 (UID2) on websites. This tool is tailored for developers and media professionals working with Addressable Media, helping ensure proper integration and functionality of ID solutions.
 
 ## Features
 
@@ -82,4 +82,4 @@ Contributions are welcome! Please submit a pull request or create an issue for a
 
 ---
 
-For questions or feedback, please contact [miyaichi@gmail.com].
+For questions or feedback, please contact [miyaichi@gmail.com](mailto:miyaichi@gmail.com).
