@@ -1,4 +1,4 @@
-import { BaseMessage, ExtensionMessage, TabInfo } from '../types/messages';
+import { BaseMessage, ExtensionMessage, MessagePayloads, TabInfo } from '../types/messages';
 import { Context } from '../types/types';
 import { ConnectionManager } from '../utils/connectionManager';
 import { Logger } from '../utils/logger';
@@ -194,7 +194,50 @@ class BackgroundService {
     //
     // When replying to a message, use this.sendMessage instead of ConnectionManager.sendMessage
     // to keep the flow of messages consistent and avoid port disconnection issues.
+    switch (message.type) {
+      case 'EXECUTE_SCRIPT':
+        const executeScriptPayload = message.payload as MessagePayloads['EXECUTE_SCRIPT'];
+        this.handleExecuteScript(port, executeScriptPayload.script);
+        break;
+    }
   };
+
+  // Execute the provided script in the active tab
+  private async handleExecuteScript(port: chrome.runtime.Port, script: string): Promise<void> {
+    const tabId = this.activeTabInfo?.tabId;
+    if (!tabId) return;
+
+    try {
+      const executeResult = await chrome.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN', // Use the main world for script execution
+        args: [script],
+        func: (scriptContent: string) => {
+          try {
+            // Execute the script and return the result
+            return new Function(`return (${scriptContent})`)()();
+          } catch (error) {
+            return null;
+          }
+        },
+      });
+      const result = executeResult[0].result;
+
+      this.sendMessage('sidepanel', port, {
+        type: 'EXECUTE_SCRIPT_RESULT',
+        payload: { success: true, result: result },
+      });
+    } catch (error) {
+      this.logger.error('Failed to execute script:', error);
+      this.sendMessage('sidepanel', port, {
+        type: 'EXECUTE_SCRIPT_RESULT',
+        payload: {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+    }
+  }
 }
 
 // Initialize the background service

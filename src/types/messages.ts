@@ -10,8 +10,8 @@ export interface TabInfo {
 
 // Message payloads type
 export interface MessagePayloads {
-  TEST_MESSAGE_FOR_SIDEPANEL: { message: string };
-  TEST_MESSAGE_FOR_CONTENTSCRIPT: { message: string };
+  EXECUTE_SCRIPT: { script: string };
+  EXECUTE_SCRIPT_RESULT: { success: boolean; result?: any; error?: string };
   // Add new message types here
 }
 

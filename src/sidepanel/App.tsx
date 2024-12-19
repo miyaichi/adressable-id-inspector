@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { uid2Inspector } from '../inspectors/UID2Inspector';
 import { BaseMessage, MessagePayloads, TabInfo } from '../types/messages';
 import { Context } from '../types/types';
 import { ConnectionManager } from '../utils/connectionManager';
@@ -6,18 +7,12 @@ import { Logger } from '../utils/logger';
 
 const logger = new Logger('sidepanel');
 
-// Only for display purpose
-interface DisplayInfo {
-  url: string;
-  windowId: number;
-}
-
 export default function App() {
   const [tabId, setTabId] = useState<number | null>(null);
-  const [displayInfo, setDisplayInfo] = useState<DisplayInfo | null>(null);
   const [connectionManager, setConnectionManager] = useState<ConnectionManager | null>(null);
   const [contentScriptContext, setContentScriptContext] = useState<Context>('undefined');
   const initialized = React.useRef(false);
+  const [uid2InspectResult, setUid2InspectResult] = useState<any | null>(null);
 
   useEffect(() => {
     if (initialized.current) {
@@ -37,10 +32,6 @@ export default function App() {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           setTabId(tab.id);
-          setDisplayInfo({
-            windowId: tab.windowId,
-            url: tab.url || '',
-          });
           initialized.current = true;
         }
 
@@ -60,45 +51,62 @@ export default function App() {
 
       logger.debug('Tab info change detected from storage:', newTab);
       setTabId(newTab.tabId);
-      setDisplayInfo({
-        windowId: newTab?.windowId ?? -1,
-        url: newTab?.url ?? '',
-      });
     });
   }, []);
 
   useEffect(() => {
     // Update content script context
     setContentScriptContext(tabId ? `content-${tabId}` : 'undefined');
-  }, [tabId, displayInfo]);
+  }, [tabId]);
 
   const handleMessage = (message: BaseMessage) => {
     logger.debug('Message received', { type: message.type });
 
     // Implement other message handling here ...
     switch (message.type) {
-      case 'TEST_MESSAGE_FOR_SIDEPANEL':
-        const payload = message.payload as MessagePayloads['TEST_MESSAGE_FOR_SIDEPANEL'];
-        logger.debug('Received message:', payload.message);
-        break;
-      default:
-        logger.debug('Unknown message type:', message.type);
+      case 'EXECUTE_SCRIPT_RESULT':
+        const executeScriptResultPayload =
+          message.payload as MessagePayloads['EXECUTE_SCRIPT_RESULT'];
+        if (executeScriptResultPayload.success) {
+          switch (executeScriptResultPayload.result._inspector) {
+            case 'uid2':
+              setUid2InspectResult(executeScriptResultPayload.result);
+              break;
+          }
+        }
         break;
     }
+  };
+
+  const handleInspectSDKs = () => {
+    if (!connectionManager) return;
+    const inspectors = [uid2Inspector];
+
+    inspectors.forEach((inspector) => {
+      connectionManager.sendMessage('background', {
+        type: 'EXECUTE_SCRIPT',
+        payload: { script: inspector.toString() },
+      });
+    });
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <div className="bg-white rounded-lg shadow p-4">
         <h1 className="text-xl font-bold mb-4">Side Panel</h1>
-        {tabId && displayInfo ? (
-          <div>
-            <p>Window ID: {displayInfo.windowId}</p>
-            <p>Active Tab ID: {tabId}</p>
-            <p>URL: {displayInfo.url}</p>
+        <button
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={() => handleInspectSDKs()}
+        >
+          Inspect SDKs
+        </button>
+      </div>
+      <div>
+        {uid2InspectResult && (
+          <div className="mt-4 bg-white rounded-lg shadow p-4">
+            <h2 className="text-lg font-bold mb-4">UID2 Inspector</h2>
+            <pre>{JSON.stringify(uid2InspectResult, null, 2)}</pre>
           </div>
-        ) : (
-          <p>No active tab</p>
         )}
       </div>
     </div>
