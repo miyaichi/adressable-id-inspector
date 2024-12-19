@@ -46,7 +46,19 @@ module.exports = {
   ],
   optimization: {
     splitChunks: {
-      chunks: 'all',
+      chunks: (chunk) => chunk.name !== 'contentScript',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name(module, chunks, cacheGroupKey) {
+            const chunkNames = chunks.map(chunk => chunk.name);
+            if (chunkNames.includes('contentScript')) {
+              return 'contentScript';
+            }
+            return `${cacheGroupKey}-${module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1].replace('@', '')}`;
+          }
+        }
+      }
     },
   },
 };
